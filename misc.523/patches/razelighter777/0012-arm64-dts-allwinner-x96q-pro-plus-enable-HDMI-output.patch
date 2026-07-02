@@ -1,0 +1,85 @@
+From f2aafb524e6c0a57f8137594be62042fa2d8eb50 Mon Sep 17 00:00:00 2001
+From: Justin Suess <utilityemal77@gmail.com>
+Date: Mon, 29 Jun 2026 17:39:47 -0400
+Subject: [PATCH 12/13] arm64: dts: allwinner: x96q-pro-plus: enable HDMI
+ output
+
+Enable the display engine and DW-HDMI controller on the X96Q Pro+ and
+wire up the HDMI type-A connector.
+
+The display engine's layer DMA master can only reach low DRAM, while the
+kernel's default CMA lands high, so scanout would fetch zeros (black
+screen). Pin a 64 MiB CMA pool at 0x44000000 (above the kernel image and
+the RCQ pool, below the dtb) so the DE can reach the framebuffer.
+
+This is a hack. The real driver uses iommu so it doesn't have to care.
+---
+ .../dts/allwinner/sun55i-h728-x96qpro+.dts    | 48 +++++++++++++++++++
+ 1 file changed, 48 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun55i-h728-x96qpro+.dts b/arch/arm64/boot/dts/allwinner/sun55i-h728-x96qpro+.dts
+index dc19ca667f24..884b4cbde6bc 100644
+--- a/arch/arm64/boot/dts/allwinner/sun55i-h728-x96qpro+.dts
++++ b/arch/arm64/boot/dts/allwinner/sun55i-h728-x96qpro+.dts
+@@ -20,6 +20,27 @@ chosen {
+ 		stdout-path = "serial0:115200n8";
+ 	};
+ 
++	reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		/*
++		 * The display engine's layer DMA master has a limited fetch
++		 * aperture and can only reach low DRAM (it reads the RCQ pool at
++		 * ~0x43000000 but not 0x4b100000). The kernel's default CMA is
++		 * high (~0xf0000000), so scanout fetches zeros (black). Pin CMA
++		 * just above the kernel image (ends ~0x42c70000) and the RCQ
++		 * pool (~0x43000000), below the dtb (~0x49ff6000).
++		 */
++		linux,cma {
++			compatible = "shared-dma-pool";
++			reusable;
++			reg = <0x0 0x44000000 0x0 0x04000000>;
++			linux,cma-default;
++		};
++	};
++
+ 	ext_osc32k: ext-osc32k-clk {
+ 		#clock-cells = <0>;
+ 		compatible = "fixed-clock";
+@@ -317,3 +338,30 @@ &usb_otg {
+ &usbphy {
+ 	status = "okay";
+ };
++
++/ {
++	hdmi-connector {
++		compatible = "hdmi-connector";
++		type = "a";
++
++		port {
++			hdmi_con_in: endpoint {
++				remote-endpoint = <&hdmi_out_con>;
++			};
++		};
++	};
++};
++
++&de {
++	status = "okay";
++};
++
++&hdmi {
++	status = "okay";
++};
++
++&hdmi_out {
++	hdmi_out_con: endpoint {
++		remote-endpoint = <&hdmi_con_in>;
++	};
++};
+-- 
+2.54.0
+

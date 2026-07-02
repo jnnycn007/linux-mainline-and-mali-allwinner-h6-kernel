@@ -1,0 +1,29 @@
+From 95fc1d3760381ef459684a5ba9bf3bb1b37575c0 Mon Sep 17 00:00:00 2001
+From: Justin Suess <utilityemal77@gmail.com>
+Date: Mon, 29 Jun 2026 17:39:17 -0400
+Subject: [PATCH 11/13] arm64: dts: allwinner: x96q-pro-plus: cap eMMC to 25
+ MHz
+
+The eMMC does not come up reliably at HS200 rates on this board. Cap
+mmc2 to 25 MHz so the rootfs storage probes and runs stably.
+
+This fixes the err -10 message on emmc on boot.
+---
+ arch/arm64/boot/dts/allwinner/sun55i-h728-x96qpro+.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun55i-h728-x96qpro+.dts b/arch/arm64/boot/dts/allwinner/sun55i-h728-x96qpro+.dts
+index 56cd470cbc91..dc19ca667f24 100644
+--- a/arch/arm64/boot/dts/allwinner/sun55i-h728-x96qpro+.dts
++++ b/arch/arm64/boot/dts/allwinner/sun55i-h728-x96qpro+.dts
+@@ -95,6 +95,7 @@ &mmc0 {
+ &mmc2 {
+ 	vmmc-supply = <&reg_cldo3>;
+ 	vqmmc-supply = <&reg_cldo1>;
++	max-frequency = <25000000>;
+ 	bus-width = <8>;
+ 	non-removable;
+ 	cap-mmc-hw-reset;
+-- 
+2.54.0
+
